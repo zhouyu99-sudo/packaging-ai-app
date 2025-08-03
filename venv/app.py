@@ -139,7 +139,8 @@ for i, message in enumerate(st.session_state.get("messages", [])):
             for img_index, col in enumerate(cols):
                 with col:
                     image_url = message["content"][img_index]
-                    st.image(image_url, use_column_width=True)
+                    # --- FIXED: Changed use_column_width to use_container_width ---
+                    st.image(image_url, use_container_width=True)
                     # Only show buttons for the most recent image message
                     if i == len(st.session_state.messages) - 1:
                         btn_col1, btn_col2 = st.columns(2)
@@ -162,17 +163,12 @@ if st.session_state.selected_for_iteration:
 if prompt := st.chat_input("请描述您的设计需求或修改意见..."):
     is_iteration = st.session_state.selected_for_iteration is not None
     
-    # --- RESTRUCTURED LOGIC ---
     if is_iteration:
-        # --- ITERATION FLOW ---
-        # For iterations, we skip the /generate_prompt API call.
         iteration_info = st.session_state.selected_for_iteration
         user_message = f"（针对方案 {iteration_info['index']+1}）{prompt}"
         st.session_state.messages.append({"role": "user", "content": user_message})
         st.session_state.selected_for_iteration = None # Clear state
 
-        # Construct the final prompt for the image generation API directly
-        # Combine the last successful plan with the new modification instruction.
         modification_instruction = f"\n\n---\n请基于以上方案进行修改，新的要求是: '{prompt}'. 请围绕这个修改要求，生成四款略有不同的设计变体。"
         final_plan_for_api = st.session_state.last_used_plan + modification_instruction
 
@@ -184,14 +180,12 @@ if prompt := st.chat_input("请描述您的设计需求或修改意见..."):
             if image_urls:
                 st.session_state.messages.append({"role": "assistant", "content": "已根据您的优化意见生成新方案："})
                 st.session_state.messages.append({"role": "assistant", "content": image_urls})
-                # The 'last_used_plan' is NOT updated here, so the next iteration is still based on the last user-approved plan.
             else:
                 st.error("图片生成失败，请检查后端服务或稍后重试。")
                 st.session_state.messages.append({"role": "assistant", "content": "图片生成失败。"})
         st.rerun()
 
     else:
-        # --- INITIAL DESIGN FLOW ---
         user_message = prompt
         full_user_prompt = f"为 {package_type} 设计一个 {package_style} 风格的包装。设计需求: {prompt}。"
         if key_elements: full_user_prompt += f" 必须包含这些元素: {key_elements}。"
@@ -223,7 +217,6 @@ if st.session_state.detailed_plan:
     edited_plan = st.text_area("**设计方案 (可编辑):**", value=st.session_state.detailed_plan, height=250, key="plan_editor")
 
     if st.button("🚀 使用此方案生成图片", type="primary", use_container_width=True):
-        # Save the user-approved plan as the new baseline for future iterations.
         st.session_state.last_used_plan = edited_plan
         
         variation_instruction = "\n\n---\n请围绕以上设计方案，生成四款略有不同的设计变体(four slightly different variations)。"
