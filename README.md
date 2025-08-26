@@ -60,7 +60,7 @@ requests
 #### 4. 运行应用
 在终端中，确保您位于项目根目录下，然后运行：
 
-streamlit run app.py
+streamlit run venv\app.py
 
 应用将在您的默认浏览器中自动打开。
 
